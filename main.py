@@ -222,7 +222,7 @@ user_choice = input("Enter your choice (1-2): ")
 
 print("Please Wait.....")
 
-#getInventory(data.get("HALUtilities", "HalUtilities.exe"))
+getInventory(data.get("HALUtilities", "HalUtilities.exe"))
 
 non_empty_ids = extract_nonempty_ids(data.get("XML", "inventory.xml"))
 
