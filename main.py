@@ -222,7 +222,7 @@ user_choice = input("Enter your choice (1-2): ")
 
 print("Please Wait.....")
 
-getInventory(data.get("HALUtilities", "HalUtilities.exe"))
+#getInventory(data.get("HALUtilities", "HalUtilities.exe"))
 
 non_empty_ids = extract_nonempty_ids(data.get("XML", "inventory.xml"))
 
@@ -235,7 +235,7 @@ for id in non_empty_ids:
         record.ProductType = titleInfo['product_type_id']
         record.SortName = titleInfo['sort_name']
         record.titleID = titleInfo['product_id']
-        if record.titleID != "1139":
+        if record.titleID != 1139:
             titleList.append(record)
  
 for index,title in enumerate(titleList):
