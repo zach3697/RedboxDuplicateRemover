@@ -147,7 +147,7 @@ Distributed under the MIT License.
 
 Zach Kalb - zachkalb@gmail.com
 
-Project Link: [https://github.com/zach3697/RedboxInventoryManager](https://github.com/zach3697/RedboxInventoryManager)
+Project Link: [https://github.com/zach3697/RedboxInventoryManager](https://github.com/zach3697/RedboxDuplicateRemover)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
