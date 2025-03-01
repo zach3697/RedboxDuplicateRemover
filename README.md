@@ -84,11 +84,13 @@ Once Activated, install the dependencies using the requirements file:
   python main.py
   ```
 
-  If you wish to generate an executable: 
+  If you wish to generate an executable first you ust have pyinstaller: 
   ```sh
   pip install pyinstaller
-
-  pyinstaller --icon=images/redboxTinkering.ico --name="Duplicate Remover" main.py
+  ```
+  Then run this to generate the executable:
+  ```sh
+  pyinstaller --icon=images/redboxTinkering.ico --name="Duplicate Remover" -F main.py
   ```
 
 ### Prerequisites (Production)
@@ -108,9 +110,9 @@ Just un-zip and run!
 ## Roadmap
 
 - [ ] Allow for duplicate removal type (ie, keep only the highest quality media for each movie)
-- [ ] Integrate handling for Bin Clearing
-- [ ] Have The code check how many titles are in the bin and tell the user 
-- [ ] limit the bin job number of disc to 60 max (based on bin capacity)
+- [X] Integrate handling for Bin Clearing
+- [X] Have The code check how many titles are in the bin and tell the user 
+- [X] limit the bin job number of disc to 60 max (based on bin capacity)
 
 
 See the [open issues](https://github.com/othneildrew/Best-README-Template/issues) for a full list of proposed features (and known issues).
