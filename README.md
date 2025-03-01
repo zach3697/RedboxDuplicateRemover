@@ -99,7 +99,9 @@ After downloading the files, you can run the main executable directly
 
 ### Installation
 
-Just un-zip and run!
+Just un-zip and run! You might need to unblock the exe by right clicking and going to properties:
+![image](https://github.com/user-attachments/assets/fecc937b-0d6e-4551-a456-29f9a36d87cd)
+
 
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
