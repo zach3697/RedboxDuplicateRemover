@@ -90,7 +90,7 @@ Once Activated, install the dependencies using the requirements file:
   ```
   Then run this to generate the executable:
   ```sh
-  pyinstaller --icon=images/redboxTinkering.ico --name="Duplicate Remover" -F main.py
+  pyinstaller --icon=images/redboxTinkering.ico --name="Duplicate Remover" -F -w main.py
   ```
 
 ### Prerequisites (Production)
