@@ -23,4 +23,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: Windows_qwiklabs
-          path: images/qwiklab_badge_checker.exe
+          path: D:\a\RedboxDuplicateRemover\RedboxDuplicateRemover\dist\Duplicate Remover.exe
