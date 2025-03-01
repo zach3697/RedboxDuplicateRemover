@@ -6,13 +6,13 @@ on:
 jobs:
   build:
 
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
 
     - name: Package Application
-      uses: JackMcKew/pyinstaller-action-windows@main
+      uses: zach3697/RedboxDuplicateRemover@main
       with:
         path: build
 
