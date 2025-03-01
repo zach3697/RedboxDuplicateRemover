@@ -12,7 +12,7 @@ jobs:
       - name: Install Python
         uses: actions/setup-python@v1
         with:
-          python-version: '3.8.7'
+          python-version: '3.8.10'
           architecture: 'x86'
       - name: Install requirements
         run: |
