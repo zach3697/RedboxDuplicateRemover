@@ -1,2 +1,0 @@
-- name: PyInstaller Action
-  uses: Martin005/pyinstaller-action@v1.2.0
