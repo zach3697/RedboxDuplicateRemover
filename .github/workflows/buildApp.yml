@@ -9,14 +9,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v2
 
     - name: Package Application
-      uses: zach3697/RedboxDuplicateRemover@main
+      uses: JackMcKew/pyinstaller-action-windows@main
       with:
-        path: build
+        path: .
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v2
       with:
-        name: name-of-artifact
-        path: build/dist/windows
+        name: my-app
+        path: dist/windows
