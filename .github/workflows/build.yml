@@ -23,4 +23,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: Windows_qwiklabs
-          path: dist/qwiklab_badge_checker.exe
+          path: images/qwiklab_badge_checker.exe
