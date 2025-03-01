@@ -1,4 +1,4 @@
-name: Build Workflow
+name: Build RDR Tool
 
 on:
   workflow_dispatch:  # Allows manual triggering
