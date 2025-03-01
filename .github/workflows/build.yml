@@ -20,7 +20,13 @@ jobs:
       - name: Run PyInstaller
         run: |
           python -m PyInstaller build.spec
+      - name: Move Config File to Dist Folder
+        run: move app.config dist\app.config
+        shell: cmd
+      - name: Move HALUtilities to Dist Folder
+        run: move HalUtilities.exe dist\HalUtilities.exe
+        shell: cmd
       - uses: actions/upload-artifact@v4
         with:
-          name: Windows_qwiklabs
-          path: D:\a\RedboxDuplicateRemover\RedboxDuplicateRemover\dist\Duplicate Remover.exe
+          name: Redbox Duplicator Remover
+          path: D:\a\RedboxDuplicateRemover\RedboxDuplicateRemover\dist\
