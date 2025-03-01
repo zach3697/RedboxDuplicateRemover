@@ -1,0 +1,22 @@
+name: Package Application with Pyinstaller
+
+on:
+  workflow_dispatch:  # Allows manual triggering
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Package Application
+      uses: zach3697/RedboxDuplicateRemover@main
+      with:
+        path: build
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: name-of-artifact
+        path: build/dist/windows
