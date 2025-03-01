@@ -109,7 +109,8 @@ Just un-zip and run!
 
 - [ ] Allow for duplicate removal type (ie, keep only the highest quality media for each movie)
 - [ ] Integrate handling for Bin Clearing
-
+- [ ] Have The code check how many titles are in the bin and tell the user 
+- [ ] limit the bin job number of disc to 60 max (based on bin capacity)
 
 
 See the [open issues](https://github.com/othneildrew/Best-README-Template/issues) for a full list of proposed features (and known issues).
