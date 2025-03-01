@@ -13,7 +13,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Create Executable
-        uses: martin005/pyinstaller-action@v1
+        uses: martin005/pyinstaller-action@v1.2.0
         with:
           python_ver: '3.8.7-32'
           spec: 'workflows/Duplicate Remover.spec'
