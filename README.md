@@ -115,6 +115,7 @@ Just un-zip and run! You might need to unblock the exe by right clicking and goi
 - [X] Integrate handling for Bin Clearing
 - [X] Have The code check how many titles are in the bin and tell the user 
 - [X] limit the bin job number of disc to 60 max (based on bin capacity)
+- [ ] Add handling for it trying to grab a disk that's not there
 
 
 See the [open issues](https://github.com/othneildrew/Best-README-Template/issues) for a full list of proposed features (and known issues).
