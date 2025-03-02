@@ -47,12 +47,14 @@ connection = HardwareService(IPCProtocol.Parse(data.get("HAL_URL", "rcp://127.0.
 schedule = HardwareJobSchedule()
 job = HardwareJob(connection)
 #----------------------------------------------------------------------------
-#                       NOTES FOR Getting SNs
-#       1. Read the XML ignoring the empties and Unknowns
-#       2. Going through each item barcode in the list, use the DLL to convert to title ID and Long Name, if not found note as UNKNOWN in both lists
-#       3. Loop through the title ID list, and check if each exists in the Keep list, if not then append, if it does already exist, then add the same index position of SN list to remove list
-#       4. Also add the long name to the remove_longname list
-#       5. Once complete, list is done and ready for binning!
+#                       NOTES FOR Seperating by type
+#       Convert each SN to title ID, then search the product group table for that title id and store the group name/ID in the title class
+#       Create a class for groups where you have grroup ID, Name, DVD Title#, Bluray Title#, and 4K Title #.
+#       Go through the title list and apply each unique group ID to the class along with the name
+#
+#
+#
+#
 #
 #----------------------------------------------------------------------------
 def search(serialNumber):
@@ -280,20 +282,22 @@ def debug(*args, **kwargs):
         print("[DEBUG]:", *args, **kwargs)
 
 
-titleList = []
-title_id = []
-long_namg = []
-diskSN = []
-
-keep_List = []
-remove_List = []
-remove_ListName = []
-
-beginJobs = []
-endJobs = []
-
 exit = "Y"
 while exit == "Y" or exit == "y":
+    titleList = []
+    title_id = []
+    long_namg = []
+    diskSN = []
+
+    keep_List = []
+    remove_List = []
+    remove_ListName = []
+
+    beginJobs = []
+    endJobs = []
+
+    getInventory(data.get("HALUtilities", "HalUtilities.exe"))
+
     print("Welcome to the Kiosk Duplicate Binning Script, V0.1")
     print("By: Zach3697")
     print("")
@@ -310,8 +314,6 @@ while exit == "Y" or exit == "y":
     print("4. Clear the Bin!")
     print("")
     user_choice = input("Enter your choice (1-4): ")
-
-    getInventory(data.get("HALUtilities", "HalUtilities.exe"))
 
     non_empty_ids = extract_nonempty_ids(data.get("XML", "inventory.xml"))
 
@@ -342,6 +344,7 @@ while exit == "Y" or exit == "y":
 
         print("Removing these titles: ", remove_ListName)
         print("Which associates to these SNs: ", remove_List)
+        print("")
         print("Total Number of Duplicates to be removed: ", len(remove_List))
         print("Total Number of Disk(s) in the bin: ", binCount)
         if len(remove_List) > 60-binCount:
@@ -354,6 +357,8 @@ while exit == "Y" or exit == "y":
             user_choice = input("Do you wish to remove these duplicates? (Y/N): ")
             if user_choice == "Y" or user_choice == "y":
                 result = startDuplicatesJob(connection, remove_List, schedule, job)
+
+
 
     elif user_choice == "3":
         print("Checking Disk(s) in bin......")
