@@ -35,6 +35,7 @@ keep_List = []
 remove_List = []
 remove_ListName = []
 titleList = []
+remainingList = []
 
 non_empty_ids = []
 
@@ -481,7 +482,7 @@ class Ui(qtw.QMainWindow):
     def getStats(self):
         self.DuplicatesList.clear()
         self.DisksInBinList.clear()
-        remainingList = []
+        remainingList.clear()
         remove_List.clear()
         remove_ListName.clear()
         keep_List.clear()
@@ -534,6 +535,12 @@ class Ui(qtw.QMainWindow):
 
     def removeDuplicates(self):
         if self.show_confirmation():
+            disksInBin = getDiskInBin(connection, schedule, job)
+            binCount = len(disksInBin)
+            if len(remove_List) > 60-binCount:
+                qtw.QMessageBox.information(self, "Info", "There is not enough capacity in the bin for ALL duplicates. The bin will be filled to max capacity.")
+                remainingList = remove_List[60-binCount:]
+                remove_List = remove_List[0:60-binCount]
             debug("Removing Duplicates...")
             self.RemoveDuplicates.setEnabled(False)  # Initially disabled
             self.ResetBin.setEnabled(False)
