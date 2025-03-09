@@ -12,6 +12,7 @@ import subprocess
 import xml.etree.ElementTree as ET
 from slpp import slpp as lua
 
+
 # Attempt to open the JSON file and load data
 json_config = "app.config"
 with open("app.config", "r") as file:
@@ -158,7 +159,7 @@ def search(serialNumber):
         titleIDResult = inventory.get_TitleId()
         debug("Title ID: ", titleIDResult)
     except AttributeError:
-        print("SN does not exist in the Database: ", search_input)
+        debug("SN does not exist in the Database: ", search_input)
         titleIDResult = 'UNKNOWN'
 
     finally:
@@ -267,10 +268,10 @@ def waitForIdle(connect, interval=5, timeout=3600):
 
         elapsed_time = time.time() - start_time  # Calculate elapsed time
         if elapsed_time >= timeout:
-            print("Timeout reached! Stopping after", timeout, "seconds.")
+            debug("Timeout reached! Stopping after", timeout, "seconds.")
             return False  # Return False to indicate failure (or raise an exception)
 
-        print("Job in progress, re-checking in", interval, "seconds...")
+        debug("Job in progress, re-checking in", interval, "seconds...")
         time.sleep(interval)  # Wait before retrying
     
     return True  # Return True if successful
@@ -358,14 +359,39 @@ def startDuplicatesJob(connect, remove_List, schedule, job):
     binResult = waitForIdle(connect,5,3600)
 
     if binResult:
-        print("Duplicates Removed!")
+        debug("Duplicates Removed!")
         trashJob(connect, job.ID)
         return 1
 
     else:
-        print("Bin Job Timeout! Please check HAL Management Console for JOB ID: ")
+        debug("Bin Job Timeout! Please check HAL Management Console for JOB ID: ")
         print(job.ID)
         return 0
+
+def getUpdatedInventory():
+    file_path = data.get("XML", "inventory.xml")
+    if os.path.exists(data.get("XML", "inventory.xml")):
+        os.remove(data.get("XML", "inventory.xml"))
+        debug(f"Deleted: {file_path}")
+    else:
+        debug(f"File not found: {file_path}")
+    getInventory(data.get("HALUtilities", "HalUtilities.exe"))
+    non_empty_ids = extract_nonempty_ids(data.get("XML", "inventory.xml"))
+
+    return non_empty_ids
+
+def getUpdatedDuplicates(self):
+    self.RemoveDuplicates.setEnabled(False)  # Initially disabled
+    self.ResetBin.setEnabled(False)
+    self.Exit.setEnabled(False)
+    self.statusBar.showMessage("Loading Duplicates...")
+    self.start_long_task("Loading Duplicates...")
+    self.getStats()
+    self.RemoveDuplicates.setEnabled(True)  # Initially disabled
+    self.ResetBin.setEnabled(True)
+    self.Exit.setEnabled(True)
+    self.statusBar.showMessage("Duplicates Updated!")
+    self.progress_dialog.close()
 
 def debug(*args, **kwargs):
     if DEBUG:
@@ -376,6 +402,7 @@ class Ui(qtw.QMainWindow):
     def __init__(self):
         super(Ui, self).__init__()
         uic.loadUi('DuplicateRemoverGUI.ui', self)
+        self.setWindowIcon(qtg.QIcon("images/redboxTinkering.ico"))
 
         #ASSIGN BUTTONS TO OBJECTS
         self.RemoveDuplicates = self.findChild(qtw.QPushButton, 'RemoveDuplicates') # Find the button
@@ -383,9 +410,9 @@ class Ui(qtw.QMainWindow):
         self.Exit = self.findChild(qtw.QPushButton, 'Exit') # Find the button
 
         #INSERT HANDLERS FOR BUTTONS
-        self.RemoveDuplicates.clicked.connect(self.getStats)
+        self.RemoveDuplicates.clicked.connect(self.removeDuplicates)
         self.ResetBin.clicked.connect(self.resetBin)
-        self.Exit.clicked.connect(lambda: print("Test"))        
+        self.Exit.clicked.connect(lambda: sys.exit())        
 
         #ASSIGN LIST TO OBJECTS
         self.DuplicatesList = self.findChild(qtw.QListWidget, 'DuplicatesList')
@@ -417,8 +444,11 @@ class Ui(qtw.QMainWindow):
         self.on_startup()
 
     def on_startup(self): 
-        non_empty_ids = extract_nonempty_ids(data.get("XML", "inventory.xml"))
-        #binCount = len(getDiskInBin(connection, schedule, job))
+        self.RemoveDuplicates.setEnabled(False)  # Initially disabled
+        self.ResetBin.setEnabled(False)
+        self.Exit.setEnabled(False)
+        self.show()
+        getUpdatedDuplicates(self)
 
     def start_long_task(self, msg):
         # Create and configure the progress dialog
@@ -432,13 +462,21 @@ class Ui(qtw.QMainWindow):
 
     def resetBin(self):
         self.start_long_task("Resetting the dump bin...")
-        #result = executeCommand(connection, job, "DUMPBIN RESETCOUNTERMOVE")
+        result = executeCommand(connection, job, "DUMPBIN RESETCOUNTERMOVE")
+        self.statusBar.showMessage("Bin Reset!")
+        self.progress_dialog.close()
+        qtw.QMessageBox.information(self, "Info", "The Bin has been reset!")
+        getUpdatedDuplicates(self)
 
     def getStats(self):
-        remainingList = []
-        non_empty_ids = extract_nonempty_ids(data.get("XML", "inventory.xml"))
         self.DuplicatesList.clear()
         self.DisksInBinList.clear()
+        remainingList = []
+        remove_List.clear()
+        remove_ListName.clear()
+        keep_List.clear()
+        titleList.clear()
+        non_empty_ids = getUpdatedInventory()
         for id in non_empty_ids:
             if id != "UNKNOWN":
                 titleInfo = search(id)
@@ -464,24 +502,45 @@ class Ui(qtw.QMainWindow):
         binCount = len(disksInBin)
         for x in disksInBin:
             result = search(str(x))
-            print(result)
+            debug(result)
             self.DisksInBinList.addItem(str(result['long_name'] + " (SN: " + x + ")"))
         self.DuplicateCount.setText(str(len(remove_List)))
         self.DisksInBinCount.setText(str(binCount))
+        if len(remove_List) == 0:
+            self.DuplicatesList.addItem("No Duplicates!")
+        if binCount == 0:
+            self.DisksInBinList.addItem("No Disk(s) in Bin")
+
+    def show_confirmation(self):
+            reply = qtw.QMessageBox.question(self, "Confirm Action", 
+                                        "Are you sure you want to sumbit these duplicates for binning?", 
+                                        qtw.QMessageBox.Yes | qtw.QMessageBox.No, 
+                                        qtw.QMessageBox.No)
+
+            if reply == qtw.QMessageBox.Yes:
+                return 1
+            else:
+                return 0
 
     def removeDuplicates(self):
-        print("hold")
-        
-getInventory(data.get("HALUtilities", "HalUtilities.exe"))
-
-
-
-#beginJobs = []
-#endJobs = []
+        if self.show_confirmation():
+            debug("Removing Duplicates...")
+            self.RemoveDuplicates.setEnabled(False)  # Initially disabled
+            self.ResetBin.setEnabled(False)
+            self.Exit.setEnabled(False)
+            self.statusBar.showMessage("Removing Duplicates...")
+            self.start_long_task("Removing Duplicates...")
+            result = startDuplicatesJob(connection, remove_List, schedule, job)
+            self.RemoveDuplicates.setEnabled(True)  # Initially disabled
+            self.ResetBin.setEnabled(True)
+            self.Exit.setEnabled(True)
+            self.statusBar.showMessage("Duplicates Removed!")
+            self.progress_dialog.close()
+            qtw.QMessageBox.information(self, "Info", "The duplicates have been removed!")
+            getUpdatedDuplicates(self)
 
 app = qtw.QApplication(sys.argv)
 window = Ui()
-window.show()
 app.exec_()
 
 '''
