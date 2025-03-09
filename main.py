@@ -1,3 +1,8 @@
+import PyQt5.QtCore
+import PyQt5.QtGui as qtg
+import PyQt5.QtWidgets as qtw
+import PyQt5.QtCore as qtc
+import PyQt5.uic as uic
 import clr
 import time
 import json
@@ -8,6 +13,7 @@ import xml.etree.ElementTree as ET
 from slpp import slpp as lua
 
 # Attempt to open the JSON file and load data
+json_config = "app.config"
 with open("app.config", "r") as file:
     data = json.load(file)
                 
@@ -16,13 +22,20 @@ DEBUG = data.get("DEBUG", "False")
 # Access specific values from the JSON data
 #vistaDB_DLL = data.get("vistaDB_DLL", "")
 
-class title():
+class Title():
     def __init__(self):
         self.titleID = None
         self.LongName = None
         self.SortName = None
         self.DiskSN = None
         self.ProductType = None
+
+keep_List = []
+remove_List = []
+remove_ListName = []
+titleList = []
+
+non_empty_ids = []
 
 #-------------------------------IMPORT DLL(s)-------------------------------------------
 clr.AddReference(data.get("redboxHALClientDLL", "C:\\Program Files\\Redbox\\REDS\\Kiosk Engine\\bin\\Redbox.HAL.Client"))
@@ -46,6 +59,7 @@ connection = HardwareService(IPCProtocol.Parse(data.get("HAL_URL", "rcp://127.0.
 
 schedule = HardwareJobSchedule()
 job = HardwareJob(connection)
+
 #----------------------------------------------------------------------------
 #                       NOTES FOR Seperating by type
 #       Convert each SN to title ID, then search the product group table for that title id and store the group name/ID in the title class
@@ -57,6 +71,82 @@ job = HardwareJob(connection)
 #
 #
 #----------------------------------------------------------------------------
+class ConfigEditor(qtw.QWidget):
+    def __init__(self, json_path):
+        super().__init__()
+        self.json_path = json_path
+        self.config_data = {}
+        
+        # Load initial data from JSON
+        self.load_config()
+
+        # Set up main window
+        self.setWindowTitle("Configuration Editor")
+        self.resize(700, 700)
+        
+        # Create main layout
+        layout = qtw.QVBoxLayout()
+        
+        # Create table widget
+        self.table = qtw.QTableWidget(self)
+        self.table.setColumnCount(2)
+        self.table.setHorizontalHeaderLabels(["Name", "Value"])
+        self.table.setRowCount(len(self.config_data))
+        self.table.setColumnWidth(0, 200)
+        self.table.setColumnWidth(1, 450)
+        self.populate_table()
+        layout.addWidget(self.table)
+        
+        # Create OK button
+        self.ok_button = qtw.QPushButton("OK", self)
+        self.ok_button.clicked.connect(self.save_config)
+        layout.addWidget(self.ok_button)
+        
+        self.setLayout(layout)
+
+    def load_config(self):
+        """Load configuration data from JSON file."""
+        try:
+            with open(self.json_path, 'r') as f:
+                self.config_data = json.load(f)
+        except Exception as e:
+            qtw.QMessageBox.critical(self, "Error", f"Failed to load config: {e}")
+            self.config_data = {}
+
+    def populate_table(self):
+        """Populate the table with the configuration data."""
+        for row, (key, value) in enumerate(self.config_data.items()):
+            self.table.setItem(row, 0, qtw.QTableWidgetItem(key))
+            value_item = qtw.QTableWidgetItem(str(value))
+            value_item.setFlags(qtc.Qt.ItemIsSelectable | qtc.Qt.ItemIsEnabled | qtc.Qt.ItemIsEditable)
+            self.table.setItem(row, 1, value_item)
+
+    def save_config(self):
+        """Save updated configuration data to JSON file."""
+        # Update config_data with edited values
+        for row in range(self.table.rowCount()):
+            key = self.table.item(row, 0).text()
+            value = self.table.item(row, 1).text()
+            try:
+                # Attempt to convert to number if possible
+                if value.isdigit():
+                    value = int(value)
+                elif '.' in value:
+                    value = float(value)
+            except ValueError:
+                pass  # Leave as string if conversion fails
+            self.config_data[key] = value
+        
+        # Write updated data back to JSON
+        try:
+            with open(self.json_path, 'w') as f:
+                json.dump(self.config_data, f, indent=4)
+            qtw.QMessageBox.information(self, "Success", "Configuration saved successfully.")
+            self.close()
+        except Exception as e:
+            qtw.QMessageBox.critical(self, "Error", f"Failed to save config: {e}")
+
+
 def search(serialNumber):
     # Get the text from the input line
     search_input = serialNumber
@@ -282,38 +372,120 @@ def debug(*args, **kwargs):
         print("[DEBUG]:", *args, **kwargs)
 
 
-exit = "Y"
+class Ui(qtw.QMainWindow):
+    def __init__(self):
+        super(Ui, self).__init__()
+        uic.loadUi('DuplicateRemoverGUI.ui', self)
+
+        #ASSIGN BUTTONS TO OBJECTS
+        self.RemoveDuplicates = self.findChild(qtw.QPushButton, 'RemoveDuplicates') # Find the button
+        self.ResetBin = self.findChild(qtw.QPushButton, 'ResetBin') # Find the button
+        self.Exit = self.findChild(qtw.QPushButton, 'Exit') # Find the button
+
+        #INSERT HANDLERS FOR BUTTONS
+        self.RemoveDuplicates.clicked.connect(self.getStats)
+        self.ResetBin.clicked.connect(self.resetBin)
+        self.Exit.clicked.connect(lambda: print("Test"))        
+
+        #ASSIGN LIST TO OBJECTS
+        self.DuplicatesList = self.findChild(qtw.QListWidget, 'DuplicatesList')
+        self.DisksInBinList = self.findChild(qtw.QListWidget, 'DisksInBinList')
+
+        #INSERT HANDLERS FOR LISTS
+        #self.DuplicatesList.itemClicked.connect(self.on_item_selected)
+        #self.DisksInBinList.itemClicked.connect(self.on_item_selected)
+
+        #ASSIGN LABELS TO OBJECTS
+        self.DuplicateCount = self.findChild(qtw.QLabel, 'DuplicateCount')
+        self.DisksInBinCount = self.findChild(qtw.QLabel, 'DisksInBinCount')
+
+        #APPLY PROPERTIES TO OBJECTS
+
+        #ASSIGN STATUS BAR TO OBJECTS
+        self.statusBar = self.findChild(qtw.QStatusBar, 'statusbar')
+
+        #ASSIGN ACTIONS TO OBJECTS
+        self.configBTN = self.findChild(qtw.QAction, 'actionConfig')
+        self.exit = self.findChild(qtw.QAction, 'actionExit')
+
+        #INSERT HANDLERS FOR TRIGGERED ACTIONS
+        self.ConfigEditor = ConfigEditor(json_config)
+        self.configBTN.triggered.connect(self.ConfigEditor.show)
+        self.exit.triggered.connect(self.close)
+
+        #INSERT HANDLERS
+        self.on_startup()
+
+    def on_startup(self): 
+        non_empty_ids = extract_nonempty_ids(data.get("XML", "inventory.xml"))
+        #binCount = len(getDiskInBin(connection, schedule, job))
+
+    def start_long_task(self, msg):
+        # Create and configure the progress dialog
+        self.progress_dialog = qtw.QProgressDialog(msg, None, 0, 0, self)
+        self.progress_dialog.setWindowModality(qtc.Qt.WindowModal)
+        self.progress_dialog.setCancelButton(None)
+        self.progress_dialog.setWindowTitle("Please Wait")
+        self.progress_dialog.setValue(50)
+        # Simulate a long-running task
+        self.progress_dialog.show()
+
+    def resetBin(self):
+        self.start_long_task("Resetting the dump bin...")
+        #result = executeCommand(connection, job, "DUMPBIN RESETCOUNTERMOVE")
+
+    def getStats(self):
+        remainingList = []
+        non_empty_ids = extract_nonempty_ids(data.get("XML", "inventory.xml"))
+        self.DuplicatesList.clear()
+        self.DisksInBinList.clear()
+        for id in non_empty_ids:
+            if id != "UNKNOWN":
+                titleInfo = search(id)
+                record = Title()
+                record.DiskSN = id
+                record.LongName = titleInfo['long_name']
+                record.ProductType = titleInfo['product_type_id']
+                record.SortName = titleInfo['sort_name']
+                record.titleID = titleInfo['product_id']
+                if record.titleID != 1139:
+                    titleList.append(record)
+        
+        for index,title in enumerate(titleList):
+            debug("Title: ", title.LongName)
+            if title.titleID in keep_List:
+                remove_List.append(title.DiskSN)
+                remove_ListName.append(title.LongName)
+                self.DuplicatesList.addItem(str(title.LongName + " (SN: " + title.DiskSN + ")"))
+            else:
+                keep_List.append(title.titleID)
+        
+        disksInBin = getDiskInBin(connection, schedule, job)
+        binCount = len(disksInBin)
+        for x in disksInBin:
+            result = search(str(x))
+            print(result)
+            self.DisksInBinList.addItem(str(result['long_name'] + " (SN: " + x + ")"))
+        self.DuplicateCount.setText(str(len(remove_List)))
+        self.DisksInBinCount.setText(str(binCount))
+
+    def removeDuplicates(self):
+        print("hold")
+        
+getInventory(data.get("HALUtilities", "HalUtilities.exe"))
+
+
+
+#beginJobs = []
+#endJobs = []
+
+app = qtw.QApplication(sys.argv)
+window = Ui()
+window.show()
+app.exec_()
+
+'''
 while exit == "Y" or exit == "y":
-    titleList = []
-    title_id = []
-    long_namg = []
-    diskSN = []
-
-    keep_List = []
-    remove_List = []
-    remove_ListName = []
-
-    beginJobs = []
-    endJobs = []
-
-    getInventory(data.get("HALUtilities", "HalUtilities.exe"))
-
-    print("Welcome to the Kiosk Duplicate Binning Script, V0.1")
-    print("By: Zach3697")
-    print("")
-    print("This script currently treats each type as a seperate title")
-    print("and will keep a DVD, Blu-Ray, and 4K copy of each title.")
-    print("A fututre version will address this soon and can be run")
-    print("after this script has been used.")
-    print("--------------------------------------------------------------")
-    print("")
-    print("Please select from the options below:")
-    print("1. Just get stats on the nuber of duplicates in my kiosk (no binning)")
-    print("2. Start the process of removing duplicates!")
-    print("3. Check which disk(s) are in the bin")
-    print("4. Clear the Bin!")
-    print("")
-    user_choice = input("Enter your choice (1-4): ")
 
     non_empty_ids = extract_nonempty_ids(data.get("XML", "inventory.xml"))
 
@@ -382,3 +554,5 @@ while exit == "Y" or exit == "y":
         print("Invalid selection")
 
     exit = input("Return to main menu? (Y/N): ")
+
+'''
