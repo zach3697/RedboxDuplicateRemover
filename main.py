@@ -535,6 +535,7 @@ class Ui(qtw.QMainWindow):
 
     def removeDuplicates(self):
         if self.show_confirmation():
+            global remove_List
             disksInBin = getDiskInBin(connection, schedule, job)
             binCount = len(disksInBin)
             if len(remove_List) > 60-binCount:
