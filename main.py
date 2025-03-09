@@ -317,7 +317,15 @@ def scheduleJob(connect,schedule,job,command,priority):
         return 0
 
 def getDiskInBin(connect,schedule,job):
+
+    beginJobs = GetAllJobs(connect)
+
     scheduleJob(connect, schedule, job, "get-barcodes-in-bin", "Normal")
+
+    endJobs = GetAllJobs(connect)
+
+    job.ID = getDifference(beginJobs,endJobs)
+
     snInBinResult = []
     stack = Stack[str]()
     result, stack = job.GetStack(stack)
@@ -327,6 +335,8 @@ def getDiskInBin(connect,schedule,job):
         tempStore2 = tempStore1.split("|")
         debug("tempstore 2: ", tempStore2)
         snInBinResult.append(tempStore2[5])
+
+    trashJob(connect, job.ID)
     return snInBinResult
 
 def adjustList(inputList ,limit):
